@@ -95,6 +95,7 @@ class HomeVC: UIViewController, Alertable {
                         // Remove overlays and annotations
                         // hide request ride button and cancel button
                         self.removeOverlaysAndAnnotations(forDrivers: false, forPassengers: true)
+                        self.setButtonsForDriver(hidden: true)
                     } else {
 
                         self.cancelButton.fadeTo(alphaValue: 0.0, withDuration: 0.2)
