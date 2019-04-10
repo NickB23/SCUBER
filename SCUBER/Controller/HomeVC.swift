@@ -36,7 +36,7 @@ class HomeVC: UIViewController, Alertable {
 
     var delegate: CenterVCDelegate?
     var manager: CLLocationManager?
-    var currentUserID: String?
+    var currentUserID: String? = ACCOUNT_NOT_LOGGED_IN
     var regionRadius: CLLocationDistance = 1000
     var revealingSplashView = RevealingSplashView(iconImage: UIImage(named: "launchScreenIcon")!, iconInitialSize: CGSize(width: 80, height: 80), backgroundColor: UIColor.white)
     var matchingItems = [MKMapItem]()
@@ -48,13 +48,12 @@ class HomeVC: UIViewController, Alertable {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if currentUserID == nil {
+        if currentUserID == nil || currentUserID == ACCOUNT_NOT_LOGGED_IN {
             // Set arbitrary userID if userID is nil
-            currentUserID = ACCOUNT_NOT_LOGGED_IN
+            self.currentUserID = ACCOUNT_NOT_LOGGED_IN
         } else {
             currentUserID = Auth.auth().currentUser?.uid
         }
-        
 
         DataService.instance.checkIfUserIsDriver(userKey: currentUserID!) { (isDriver) in
             if isDriver == true {
