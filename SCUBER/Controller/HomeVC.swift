@@ -176,6 +176,7 @@ class HomeVC: UIViewController, Alertable {
     }
 
     func setButtonsForDriver(hidden: Bool) {
+        self.destinationTextField.isUserInteractionEnabled = false
         if hidden {
             self.actionBtn.fadeTo(alphaValue: 0.0, withDuration: 0.2)
             self.cancelButton.fadeTo(alphaValue: 0.0, withDuration: 0.2)
