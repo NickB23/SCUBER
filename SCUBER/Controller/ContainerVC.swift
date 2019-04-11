@@ -44,7 +44,7 @@ class ContainerVC: UIViewController {
     
     func initCenter(screen: ShowWhichVC) {
         var presentingController: UIViewController
-        showVC  = screen
+        showVC = screen
         if homeVC == nil {
             homeVC = UIStoryboard.homeVC()
             homeVC.delegate = self
@@ -135,13 +135,12 @@ extension ContainerVC: CenterVCDelegate {
         // Arbitrary tag to identify it later
         whiteCoverView.tag = 25
         
-        self.centerController.view.addSubview(whiteCoverView)
-        whiteCoverView.fadeTo(alphaValue: 0.75, withDuration: 0.2)
-        
         tap = UITapGestureRecognizer(target: self, action: #selector(animateLeftPanel(shouldExpand:)))
         tap.numberOfTapsRequired = 1
         
-        self.centerController.view.addGestureRecognizer(tap)
+        whiteCoverView.addGestureRecognizer(tap)
+        self.centerController.view.addSubview(whiteCoverView)
+        whiteCoverView.fadeTo(alphaValue: 0.75, withDuration: 0.2)
     }
     
     func hideWhiteCoverView() {

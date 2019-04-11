@@ -45,74 +45,6 @@ class HomeVC: UIViewController, Alertable {
     var actionForButton: ButtonAction = .requestRide
     var tableView = UITableView()
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        if currentUserID == nil || currentUserID == ACCOUNT_NOT_LOGGED_IN {
-            // Set arbitrary userID if userID is nil
-            self.currentUserID = ACCOUNT_NOT_LOGGED_IN
-        } else {
-            currentUserID = Auth.auth().currentUser?.uid
-        }
-
-        DataService.instance.checkIfUserIsDriver(userKey: currentUserID!) { (isDriver) in
-            if isDriver == true {
-                self.setButtonsForDriver(hidden: true)
-            }
-        }
-
-        DataService.instance.checkIfDriverIsOnTrip(driverKey: self.currentUserID!) { (isOnTrip, driverKey, tripKey) in
-            if isOnTrip == true {
-                DataService.instance.REF_TRIPS.observeSingleEvent(of: .value, with: { (tripSnapshot) in
-                    if let tripSnapshot = tripSnapshot.children.allObjects as? [DataSnapshot] {
-                        for trip in tripSnapshot {
-                            if trip.childSnapshot(forPath: DRIVER_KEY).value as? String == self.currentUserID! {
-                                let pickupCoordinateArray = trip.childSnapshot(forPath: USER_PICKUP_COORDINATE).value as! NSArray
-                                let pickupCoordinate = CLLocationCoordinate2D(latitude: pickupCoordinateArray[0] as! CLLocationDegrees, longitude: pickupCoordinateArray[1] as! CLLocationDegrees)
-                                let pickupPlacemark = MKPlacemark(coordinate: pickupCoordinate)
-                                self.dropPinFor(placemark: pickupPlacemark)
-                                self.searchMapKitForResultsWithPolyline(forOriginMapItem: nil, withDestinationMapItem: MKMapItem(placemark: pickupPlacemark))
-                                self.setCustomRegion(forAnnotationType: .pickup, withCoordinate: pickupCoordinate)
-                                self.actionForButton = .getDirectionsToPassenger
-                                self.actionBtn.setTitle(MSG_GET_DIRECTIONS, for: .normal)
-                                self.setButtonsForDriver(hidden: false)
-                            }
-                        }
-                    }
-                })
-            }
-        }
-
-        DataService.instance.REF_TRIPS.observe(.childRemoved) { (removedTripSnapshot) in
-            if let removedTripDict = removedTripSnapshot.value as? [String: AnyObject] {
-                if removedTripDict[DRIVER_KEY] != nil {
-                    DataService.instance.REF_DRIVERS.child(removedTripDict[DRIVER_KEY] as! String).updateChildValues([DRIVER_IS_ON_TRIP: false])
-                }
-
-                DataService.instance.checkIfUserIsDriver(userKey: self.currentUserID!, handler: { (isDriver) in
-                    if isDriver == true {
-                        // Remove overlays and annotations
-                        // hide request ride button and cancel button
-                        self.removeOverlaysAndAnnotations(forDrivers: false, forPassengers: true)
-                        self.setButtonsForDriver(hidden: true)
-                    } else {
-
-                        self.cancelButton.fadeTo(alphaValue: 0.0, withDuration: 0.2)
-                        self.actionBtn.animateButton(shouldLoad: false, withMessage: MSG_REQUEST_RIDE)
-
-                        self.destinationTextField.isUserInteractionEnabled = true
-                        self.destinationTextField.text = ""
-                        self.removeOverlaysAndAnnotations(forDrivers: false, forPassengers: true)
-                        self.centerMapOnUserLocation()
-                    }
-                })
-            }
-        }
-
-        connectUserAndDriverForTrip()
-
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -164,6 +96,74 @@ class HomeVC: UIViewController, Alertable {
                 }
             }
         }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        if currentUserID == nil || currentUserID == ACCOUNT_NOT_LOGGED_IN {
+            // Set arbitrary userID if userID is nil
+            self.currentUserID = ACCOUNT_NOT_LOGGED_IN
+        } else {
+            currentUserID = Auth.auth().currentUser?.uid
+        }
+        
+        DataService.instance.checkIfUserIsDriver(userKey: currentUserID!) { (isDriver) in
+            if isDriver == true {
+                self.setButtonsForDriver(hidden: true)
+            }
+        }
+        
+        DataService.instance.checkIfDriverIsOnTrip(driverKey: self.currentUserID!) { (isOnTrip, driverKey, tripKey) in
+            if isOnTrip == true {
+                DataService.instance.REF_TRIPS.observeSingleEvent(of: .value, with: { (tripSnapshot) in
+                    if let tripSnapshot = tripSnapshot.children.allObjects as? [DataSnapshot] {
+                        for trip in tripSnapshot {
+                            if trip.childSnapshot(forPath: DRIVER_KEY).value as? String == self.currentUserID! {
+                                let pickupCoordinateArray = trip.childSnapshot(forPath: USER_PICKUP_COORDINATE).value as! NSArray
+                                let pickupCoordinate = CLLocationCoordinate2D(latitude: pickupCoordinateArray[0] as! CLLocationDegrees, longitude: pickupCoordinateArray[1] as! CLLocationDegrees)
+                                let pickupPlacemark = MKPlacemark(coordinate: pickupCoordinate)
+                                self.dropPinFor(placemark: pickupPlacemark)
+                                self.searchMapKitForResultsWithPolyline(forOriginMapItem: nil, withDestinationMapItem: MKMapItem(placemark: pickupPlacemark))
+                                self.setCustomRegion(forAnnotationType: .pickup, withCoordinate: pickupCoordinate)
+                                self.actionForButton = .getDirectionsToPassenger
+                                self.actionBtn.setTitle(MSG_GET_DIRECTIONS, for: .normal)
+                                self.setButtonsForDriver(hidden: false)
+                            }
+                        }
+                    }
+                })
+            }
+        }
+        
+        DataService.instance.REF_TRIPS.observe(.childRemoved) { (removedTripSnapshot) in
+            if let removedTripDict = removedTripSnapshot.value as? [String: AnyObject] {
+                if removedTripDict[DRIVER_KEY] != nil {
+                    DataService.instance.REF_DRIVERS.child(removedTripDict[DRIVER_KEY] as! String).updateChildValues([DRIVER_IS_ON_TRIP: false])
+                }
+                
+                DataService.instance.checkIfUserIsDriver(userKey: self.currentUserID!, handler: { (isDriver) in
+                    if isDriver == true {
+                        // Remove overlays and annotations
+                        // hide request ride button and cancel button
+                        self.removeOverlaysAndAnnotations(forDrivers: false, forPassengers: true)
+                        self.setButtonsForDriver(hidden: true)
+                    } else {
+                        
+                        self.cancelButton.fadeTo(alphaValue: 0.0, withDuration: 0.2)
+                        self.actionBtn.animateButton(shouldLoad: false, withMessage: MSG_REQUEST_RIDE)
+                        
+                        self.destinationTextField.isUserInteractionEnabled = true
+                        self.destinationTextField.text = ""
+                        self.removeOverlaysAndAnnotations(forDrivers: false, forPassengers: true)
+                        self.centerMapOnUserLocation()
+                    }
+                })
+            }
+        }
+        
+        connectUserAndDriverForTrip()
+        
     }
 
     func checkLocationAuthStatus() {
@@ -700,13 +700,17 @@ extension HomeVC: UITextFieldDelegate {
             }
         }
     }
-
+    
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         if textField == destinationTextField {
-            performSearch()
-
-            shouldPresentLoadingView(true)
-            view.endEditing(true)
+            if textField.text == "" {
+                showAlert(ERROR_MSG_NO_SEARCH_RESULTS)
+            } else {
+                performSearch()
+                
+                shouldPresentLoadingView(true)
+                view.endEditing(true)
+            }
         }
         return true
     }

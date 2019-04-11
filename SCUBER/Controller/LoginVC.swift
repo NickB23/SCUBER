@@ -77,7 +77,6 @@ class LoginVC: UIViewController, UITextFieldDelegate, Alertable {
             
             if let email = emailField.text, let password = passwordField.text {
                 Auth.auth().signIn(withEmail: email, password: password) { [weak self] result, error in
-                    guard let strongSelf = self else { return }
                     if error == nil {
                         guard let result = result else {print("Error: No result from firebase"); return}
                         let user = result.user
